@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,21 +13,19 @@ button { padding: 5px 10px; margin: 5px; }
 table { border-collapse: collapse; margin-top: 10px; }
 th, td { padding: 6px 10px; border: 1px solid #555; text-align: center; }
 </style>
+</head>
+<body>
 
+<!-- 🔐 Password Protection -->
 <script>
-// 🔐 Password protection
 const correctPassword = "gplg123";
-let userPassword = prompt("Enter password to access Quick Quotes UK:");
+const userPassword = prompt("Enter password to access Quick Quotes UK:");
 
 if (userPassword !== correctPassword) {
-  alert("Incorrect password!");
-  document.write("<h2>Access Denied</h2>");
+  document.body.innerHTML = "<h2>Access Denied</h2>";
   throw new Error("Access denied");
 }
 </script>
-
-</head>
-<body>
 
 <h2>🚐 Quick Quotes UK - 2 Pickups Milk Run</h2>
 
@@ -152,4 +151,3 @@ async function calculateQuotes(){
 
 </body>
 </html>
--
