@@ -1,82 +1,108 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Quick Quotes UK</title>
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-
-<style>
-body{font-family:Arial;padding:20px;background:#f4f6fb;}
-input, select{width:100%;padding:10px;margin:6px 0;border-radius:8px;border:1px solid #ccc;}
-button{width:100%;padding:12px;background:#1d4ed8;color:white;border:none;border-radius:10px;font-size:16px;}
-#map{height:300px;margin-top:20px;border-radius:12px;}
-</style>
+  <meta charset="UTF-8">
+  <title>Quick Quotes UK</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    input { margin: 5px; padding: 5px; width: 250px; }
+    button { padding: 5px 10px; margin: 5px; }
+    #map { height: 400px; margin-top: 20px; }
+    table { border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 6px 10px; border: 1px solid #555; text-align: center; }
+  </style>
 </head>
 <body>
+
 <h2>🚐 Quick Quotes UK</h2>
+
 <input id="pickup" placeholder="Pickup postcode or address">
 <input id="delivery" placeholder="Delivery postcode or address">
 
-<select id="vehicle">
-  <option value="1">SWB</option>
-  <option value="1.05">MWB</option>
-  <option value="1.1">LWB</option>
-  <option value="1.15">XLWB</option>
-  <option value="1.2">Luton</option>
-  <option value="2.4">7.5T</option>
-  <option value="2.5">18T</option>
-  <option value="3">Artic</option>
-</select>
-
-<button onclick="calculateQuote()">Calculate Quote</button>
+<button onclick="calculateAllQuotes()">Calculate All Quotes</button>
 
 <h3 id="result"></h3>
+
 <div id="map"></div>
 
-<script>
-let map = L.map('map').setView([51.5,-0.12],6);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
+<!-- Leaflet -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<!-- Axios -->
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
+<script>
+let map = L.map('map').setView([51.5, -0.12], 6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap'
+}).addTo(map);
+
+// Lista vehiculelor și tarife
+const vehicles = {
+  "SWB": 1,
+  "MWB": 1.05,
+  "LWB": 1.1,
+  "XLWB": 1.15,
+  "Luton": 1.2,
+  "7.5T": 2.4,
+  "18T": 2.5,
+  "Artic": 3
+};
+
+// Funcție pentru a obține coordonate dintr-un address
 async function getCoords(address){
-  let url=`https://nominatim.openstreetmap.org/search?format=json&q=${address}`;
-  let res = await axios.get(url);
-  if(res.data.length>0){return [res.data[0].lat,res.data[0].lon];}
-  return null;
+  try {
+    let url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
+    let res = await axios.get(url);
+    if(res.data.length > 0){
+      return [parseFloat(res.data[0].lat), parseFloat(res.data[0].lon)];
+    }
+    return null;
+  } catch(e) {
+    alert("Error fetching coordinates");
+    return null;
+  }
 }
 
-async function calculateQuote(){
-  let pickup = document.getElementById("pickup").value;
-  let delivery = document.getElementById("delivery").value;
-  let tariff = parseFloat(document.getElementById("vehicle").value);
+// Funcție pentru calculul tuturor costurilor
+async function calculateAllQuotes() {
+  const pickup = document.getElementById("pickup").value;
+  const delivery = document.getElementById("delivery").value;
 
-  let p1 = await getCoords(pickup);
-  let p2 = await getCoords(delivery);
+  if(!pickup || !delivery){ alert("Please enter both pickup and delivery"); return; }
 
-  if(!p1 || !p2){alert("Address not found");return;}
+  const p1 = await getCoords(pickup);
+  const p2 = await getCoords(delivery);
 
-  let marker1 = L.marker(p1).addTo(map);
-  let marker2 = L.marker(p2).addTo(map);
+  if (!p1 || !p2) { alert("Address not found"); return; }
 
-  let route = await axios.get(`https://router.project-osrm.org/route/v1/driving/${p1[1]},${p1[0]};${p2[1]},${p2[0]}?overview=false`);
+  // Ștergem markerii vechi
+  map.eachLayer((layer) => { if(layer instanceof L.Marker) map.removeLayer(layer); });
 
-  let distanceMeters = route.data.routes[0].distance;
-  let miles = distanceMeters / 1609;
+  L.marker(p1).addTo(map);
+  L.marker(p2).addTo(map);
 
-  let baseTransport = miles * tariff;
-  let transportPrice = Math.max(baseTransport, 50);
-  let clientPrice = transportPrice * 1.05;
+  // Calculăm distanța
+  const route = await axios.get(`https://router.project-osrm.org/route/v1/driving/${p1[1]},${p1[0]};${p2[1]},${p2[0]}?overview=false`);
+  const distanceMeters = route.data.routes[0].distance;
+  const miles = distanceMeters / 1609;
 
-  document.getElementById("result").innerHTML =
-    "Distance: "+miles.toFixed(2)+" miles<br>"+
-    "Transport Price: £"+transportPrice.toFixed(2)+"<br>"+
-    "Client Price: £"+clientPrice.toFixed(2);
+  // Creăm tabelul
+  let html = `<p>Distance: ${miles.toFixed(2)} miles</p>`;
+  html += `<table><tr><th>Vehicle</th><th>Transport Price (£)</th><th>Client Price (£)</th></tr>`;
 
-  map.fitBounds([p1,p2]);
+  for (const [veh, rate] of Object.entries(vehicles)) {
+    const transportPrice = Math.max(miles * rate, 50); // minimum £50
+    const clientPrice = transportPrice * 1.05;          // +5% marjă
+    html += `<tr><td>${veh}</td><td>£${transportPrice.toFixed(2)}</td><td>£${clientPrice.toFixed(2)}</td></tr>`;
+  }
+
+  html += `</table>`;
+  document.getElementById("result").innerHTML = html;
+
+  map.fitBounds([p1, p2]);
 }
 </script>
+
 </body>
 </html>
--
