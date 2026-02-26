@@ -12,6 +12,19 @@ button { padding: 5px 10px; margin: 5px; }
 table { border-collapse: collapse; margin-top: 10px; }
 th, td { padding: 6px 10px; border: 1px solid #555; text-align: center; }
 </style>
+
+<script>
+// 🔐 Password protection
+const correctPassword = "gplg123";
+let userPassword = prompt("Enter password to access Quick Quotes UK:");
+
+if (userPassword !== correctPassword) {
+  alert("Incorrect password!");
+  document.write("<h2>Access Denied</h2>");
+  throw new Error("Access denied");
+}
+</script>
+
 </head>
 <body>
 
@@ -46,7 +59,6 @@ const vehicles = {
   "Arctic": 3.3
 };
 
-// Get coordinates
 async function getCoords(address){
   try{
     let url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
@@ -59,7 +71,6 @@ async function getCoords(address){
   }
 }
 
-// Calculate quotes
 async function calculateQuotes(){
   const pickups = [
     document.getElementById("pickup1").value,
@@ -82,31 +93,26 @@ async function calculateQuotes(){
   if(!deliveryCoords){ alert("Delivery address not found"); return; }
   coordsList.push(deliveryCoords);
 
-  // Clear previous markers and polylines
   map.eachLayer(layer => {
     if(layer instanceof L.Marker || layer instanceof L.Polyline) map.removeLayer(layer);
   });
 
-  // Add markers
   coordsList.forEach((c,i)=>{
     let label = (i < pickups.length) ? `Pickup ${i+1}` : 'Delivery';
     L.marker(c).addTo(map).bindPopup(label).openPopup();
   });
 
-  // Draw polyline connecting all points in order
   L.polyline(coordsList, {color:'blue', weight:4, opacity:0.7}).addTo(map);
   map.fitBounds(coordsList);
 
-  // Calculate distances between consecutive points
   let segmentDistances = [];
   for(let i=0;i<coordsList.length-1;i++){
     const from = coordsList[i];
     const to = coordsList[i+1];
     const route = await axios.get(`https://router.project-osrm.org/route/v1/driving/${from[1]},${from[0]};${to[1]},${to[0]}?overview=false`);
-    segmentDistances.push(route.data.routes[0].distance / 1609); // miles
+    segmentDistances.push(route.data.routes[0].distance / 1609);
   }
 
-  // Build cost table
   let html = `<table><tr><th>Vehicle</th><th>Cost Distance (£)</th><th>Cost Additional Stop (£)</th><th>Total Courier (£)</th><th>Customer Cost (£)</th></tr>`;
 
   for(const [veh, rate] of Object.entries(vehicles)){
@@ -115,16 +121,15 @@ async function calculateQuotes(){
 
     segmentDistances.forEach((dist,i)=>{
       let cost = dist*rate;
-      if(i === 0) costDistance += cost;           // Pickup 1
-      else if(i === 1){                           // Pickup 2
+      if(i === 0) costDistance += cost;
+      else if(i === 1){
         costDistance += cost;
         if(pickups.length > 1) costAdditional += 40;
-      } else {                                   // Delivery
+      } else {
         costDistance += cost;
       }
     });
 
-    // Apply minimum £65 for delivery
     const deliveryCost = Math.max(segmentDistances[segmentDistances.length-1]*rate, 65);
     costDistance = costDistance - (segmentDistances[segmentDistances.length-1]*rate) + deliveryCost;
 
@@ -147,4 +152,3 @@ async function calculateQuotes(){
 
 </body>
 </html>
--
