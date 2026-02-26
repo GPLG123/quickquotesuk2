@@ -119,12 +119,15 @@ async function calculateAllQuotes(){
     html += `<tr><td>${veh}</td>`;
     segmentDistances.forEach((dist,i)=>{
       let cost;
-      if(i < pickups.length){
-        // Extra pickup → £40 + distance*rate
+      if(i === 0){
+        // Pickup 1 → fără taxa suplimentară
+        cost = dist*rate;
+      } else if(i < pickups.length){
+        // Pickup 2 și 3 → £40 + dist*rate
         cost = 40 + dist*rate;
       } else {
-        // Last segment → delivery principal, min £65
-        cost = Math.max(dist*rate,65);
+        // Delivery → minim £65
+        cost = Math.max(dist*rate, 65);
       }
       totalTransport += cost;
       html += `<td>£${cost.toFixed(2)}</td>`;
@@ -139,4 +142,3 @@ async function calculateAllQuotes(){
 
 </body>
 </html>
--
