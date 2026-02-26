@@ -1,26 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Quick Quotes UK - Milk Run</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    input { margin: 5px; padding: 5px; width: 250px; }
-    button { padding: 5px 10px; margin: 5px; }
-    #map { height: 400px; margin-top: 20px; }
-    table { border-collapse: collapse; margin-top: 10px; }
-    th, td { padding: 6px 10px; border: 1px solid #555; text-align: center; }
-  </style>
+<meta charset="UTF-8">
+<title>Quick Quotes UK - Milk Run</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<style>
+body { font-family: Arial, sans-serif; margin: 20px; }
+input { margin: 5px; padding: 5px; width: 250px; }
+button { padding: 5px 10px; margin: 5px; }
+#map { height: 400px; margin-top: 20px; }
+table { border-collapse: collapse; margin-top: 10px; }
+th, td { padding: 6px 10px; border: 1px solid #555; text-align: center; }
+</style>
 </head>
 <body>
 
 <h2>🚐 Quick Quotes UK - Milk Run</h2>
 
-<input id="pickup" placeholder="Pickup postcode or address">
-<input id="delivery1" placeholder="Delivery postcode 1">
-<input id="delivery2" placeholder="Delivery postcode 2 (optional)">
-<input id="delivery3" placeholder="Delivery postcode 3 (optional)">
+<input id="pickup1" placeholder="Pickup 1 postcode or address">
+<input id="pickup2" placeholder="Pickup 2 postcode or address (optional)">
+<input id="pickup3" placeholder="Pickup 3 postcode or address (optional)">
+<input id="delivery" placeholder="Delivery postcode or address">
 
 <button onclick="calculateAllQuotes()">Calculate All Quotes</button>
 
@@ -28,18 +28,16 @@
 
 <div id="map"></div>
 
-<!-- Leaflet -->
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<!-- Axios -->
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
 <script>
-let map = L.map('map').setView([51.5, -0.12], 6);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© OpenStreetMap'
+let map = L.map('map').setView([51.5,-0.12],6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  attribution:'© OpenStreetMap'
 }).addTo(map);
 
-// Vehicles and rates (+10% applied already)
+// Vehicles and rates (+10% applied)
 const vehicles = {
   "SWB": 1.1,
   "MWB": 1.155,
@@ -51,80 +49,93 @@ const vehicles = {
   "Artic": 3.3
 };
 
-// Get coordinates from address
+// Get coordinates
 async function getCoords(address){
-  try {
+  try{
     let url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
     let res = await axios.get(url);
-    if(res.data.length > 0){
-      return [parseFloat(res.data[0].lat), parseFloat(res.data[0].lon)];
-    }
+    if(res.data.length > 0) return [parseFloat(res.data[0].lat), parseFloat(res.data[0].lon)];
     return null;
-  } catch(e) {
+  }catch(e){
     alert("Error fetching coordinates");
     return null;
   }
 }
 
-// Calculate quotes for all vehicles (milk run)
-async function calculateAllQuotes() {
-  const pickup = document.getElementById("pickup").value;
-  const deliveries = [
-    document.getElementById("delivery1").value,
-    document.getElementById("delivery2").value,
-    document.getElementById("delivery3").value
-  ].filter(d => d); // only non-empty deliveries
+// Calculate quotes
+async function calculateAllQuotes(){
+  const pickups = [
+    document.getElementById("pickup1").value,
+    document.getElementById("pickup2").value,
+    document.getElementById("pickup3").value
+  ].filter(p => p);
+  const delivery = document.getElementById("delivery").value;
 
-  if(!pickup || deliveries.length === 0){ alert("Enter pickup and at least 1 delivery"); return; }
+  if(pickups.length === 0 || !delivery){
+    alert("Enter at least 1 pickup and delivery");
+    return;
+  }
 
   // Get coordinates
   const coordsList = [];
-  const pickupCoords = await getCoords(pickup);
-  if(!pickupCoords){ alert("Pickup address not found"); return; }
-  coordsList.push(pickupCoords);
-
-  for(const d of deliveries){
-    const c = await getCoords(d);
-    if(!c){ alert(`Delivery address not found: ${d}`); return; }
+  for(const p of pickups){
+    const c = await getCoords(p);
+    if(!c){ alert(`Pickup not found: ${p}`); return; }
     coordsList.push(c);
   }
+  const deliveryCoords = await getCoords(delivery);
+  if(!deliveryCoords){ alert("Delivery address not found"); return; }
+  coordsList.push(deliveryCoords);
 
-  // Clear old markers
-  map.eachLayer(layer => { if(layer instanceof L.Marker) map.removeLayer(layer); });
+  // Clear old markers and lines
+  map.eachLayer(layer => { if(layer instanceof L.Marker || layer instanceof L.Polyline) map.removeLayer(layer); });
 
-  // Place markers
-  coordsList.forEach((c, i) => {
-    let label = (i===0) ? "Pickup" : `Delivery ${i}`;
-    L.marker(c).addTo(map).bindPopup(label).openPopup();
+  // Add markers
+  coordsList.forEach((c,i)=>{
+    let label = (i < pickups.length) ? `Pickup ${i+1}` : 'Delivery';
+    L.marker(c).addTo(map).bindPopup(label);
   });
 
-  // Calculate total distance using OSRM route between consecutive points
-  let totalDistance = 0;
-  for(let i=0; i<coordsList.length-1; i++){
+  // Draw line connecting all points
+  L.polyline(coordsList, {color:'blue', weight:4, opacity:0.7}).addTo(map);
+  map.fitBounds(coordsList);
+
+  // Calculate distances between consecutive points
+  let segmentDistances = [];
+  for(let i=0;i<coordsList.length-1;i++){
     const from = coordsList[i];
     const to = coordsList[i+1];
     const route = await axios.get(`https://router.project-osrm.org/route/v1/driving/${from[1]},${from[0]};${to[1]},${to[0]}?overview=false`);
-    totalDistance += route.data.routes[0].distance; // in meters
+    segmentDistances.push(route.data.routes[0].distance / 1609); // miles
   }
-  const miles = totalDistance / 1609; // convert to miles
 
-  // Build result table
-  let html = `<p>Total distance: ${miles.toFixed(2)} miles</p>`;
-  html += `<table><tr><th>Vehicle</th><th>Transport Price (£)</th><th>Client Price (£)</th></tr>`;
+  // Build table
+  let html = `<table><tr><th>Vehicle</th>`;
+  pickups.forEach((p,i)=>{ html+=`<th>Pickup ${i+1}</th>` });
+  html += `<th>Delivery (Principal)</th><th>Total (£)</th></tr>`;
 
-  for (const [veh, rate] of Object.entries(vehicles)) {
-    const transportPrice = Math.max(miles * rate, 65); // minimum £65
-    const clientPrice = transportPrice * 1.05; // +5% margin
-    html += `<tr><td>${veh}</td><td>£${transportPrice.toFixed(2)}</td><td>£${clientPrice.toFixed(2)}</td></tr>`;
+  for(const [veh, rate] of Object.entries(vehicles)){
+    let totalTransport = 0;
+    html += `<tr><td>${veh}</td>`;
+    segmentDistances.forEach((dist,i)=>{
+      let cost;
+      if(i < pickups.length){
+        // Extra pickup → £40 + distance*rate
+        cost = 40 + dist*rate;
+      } else {
+        // Last segment → delivery principal, min £65
+        cost = Math.max(dist*rate,65);
+      }
+      totalTransport += cost;
+      html += `<td>£${cost.toFixed(2)}</td>`;
+    });
+    html += `<td>£${(totalTransport*1.05).toFixed(2)}</td></tr>`;
   }
 
   html += `</table>`;
   document.getElementById("result").innerHTML = html;
-
-  map.fitBounds(coordsList);
 }
 </script>
 
 </body>
 </html>
--
