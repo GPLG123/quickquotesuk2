@@ -1,153 +1,23 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Quick Quotes UK - 2 Pickups Milk Run</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-<style>
-body { font-family: Arial, sans-serif; margin: 20px; }
-input { margin: 5px; padding: 5px; width: 250px; }
-button { padding: 5px 10px; margin: 5px; }
-#map { height: 400px; margin-top: 20px; }
-table { border-collapse: collapse; margin-top: 10px; }
-th, td { padding: 6px 10px; border: 1px solid #555; text-align: center; }
-</style>
+<title>Protected Quick Quotes UK</title>
+<script src="https://robinmoisson.github.io/staticrypt/staticrypt.min.js"></script>
 </head>
 <body>
-
-<!-- 🔐 Password Protection -->
 <script>
-const correctPassword = "gplg123";
-const userPassword = prompt("Enter password to access Quick Quotes UK:");
-
-if (userPassword !== correctPassword) {
-  document.body.innerHTML = "<h2>Access Denied</h2>";
-  throw new Error("Access denied");
-}
+  // Codul tău HTML criptat cu StatiCrypt
+  // Prompt pentru parola gplg123
+  const encrypted = "11379a69df560384d68a2f0de2e31e21680529c5473d22849bf994a6af349f3a16cf71474afa1949353584f005c7a42782d37ebdf97d4405a781d04daac7875acb1bb089ecf00547eff3d1404c0f64324e6105ee7ec8c3cde86de9c3806fbe31c2c83cce0505e09fa5eb010b626ec690349602c899e8a1d6a39190ea42d8e4a1008a21f7dcaf5c7b8ff35c0556aaf3c70e54f4c0f25fbb6db78bcce1b43b167163a47c885f04a46ee7db18f0e030a8fe2c7f03b1a3647575850db40ab1247952a70de8c288baffaedac113d0652aba3b19db8c0d072b2312d7b59335409e1ff5808252029ad20fcbc36cc364b24bd974ec9bfee0a166d092a79b5f00ba37d54bb672b9f1f105b67929f93286bbc7afabbd2fa0f2c736db8fd755501dc610d3a80a9568d02d2842d08551fe7cb0a58637c9511c006c66357fb04f8e7a691504ad80a7416e605d4e007b6acb2fead8d4a9143813026f912ee0dff6580fdc72113a9e215393c3caee100a594f175bfa14997b64db1dc1d83873610ccf8ee119ae543d4896da5ac763464c1c187910bd4ac164e512544f384c2fb501d2f2c44c83c5c7585cf2f9f05b6c430bae897f4ddf9d20b3483efdffabcdab149ca5aa3b3323fa9d53a57505d7ffd24b38a55e1fd647404d35cc9dc51cae9a2e3c5c57df4c5dba103d8da8a7225769f60b20b029650eae8d447f12a00dd6a37451c02af3d6e1acfde0e696502eaede3bef5504a3ba3eec74221bb2053917ecb7046cc745864eac21a47dedf7ebd84a7e705d19bb83ce0be725b6c213c9e6347307bb903ae0b9aca46478b7fe2c8f2ca84a3383f18036f10e1571a83635545d20266d7453a6aec8cc879027c4cec0ed89c7e50b58a64e148dde93bf04e28b90c1e23dbd88c1ea73d93af40a07e5585b5be0eb207228ebed3a84c87af40be5b34daefd7d328feca8a5bb0765270f8a530bfa4922b3c4d35206f6da751b6bb737c5a79de00fb731a731af95f7a3cc8ff20b85b15b201e89079d0ffd96728fe42f8542dc7b1d1ba324aced154778acf7997c57577783cf6cc1d7bfb286c68cdd6ab0b01b80c8e4657ff83139267fbd263157933f27c062aee9f3400e42e9d379929f75d2104035b9e770f639979e73ac7e9edf1ce2f693c0d1c45257a10acf7a7adfa56a329cff0cbac91de95193e3fff9db9f6f25bd37c16492e4761734e58384ec026198ca4b66391703ee7946377f7eade6f2927fbbc668303dea26bc47e8b8c0573baefee5f6c50570f160d6b906a054df02ecad3e62e81e31670988c5ef20dc5881c8513b8b6c27b3dd745e82a48d745caf24aa17300df8aab59b0308df4b2bab6737bb4e1f32adaa4c63014902b3451f39e2d4ed3dc845f42ccf795172c5b2306507e1ad6e289d62c716c3dfc7206d085360d5869e98343c3bd913b4e651e2c4c1854c1220e03e9a3849d564705c2612b7e9ac8a5099a4391bc163013b7d3bf919c9c1b58ebc664648aa0f7a4e7bd1ca8f1b52057e59a6c7b01d5fe7c1741515d92eda1677b9d5c76ae86803f81b54bfd57bea35bd34abaa7daf09ed76767c9026dbfb98eab1e0db7acdc46e26a9035e48bf1de433643512f0c7aefc8d22156a1b4aecd6de97aa8242453beb6f2442105d0798bdb321e7a6532252202fa87b76e8126b54b4c35300dd1f04204a474379f4ab25108838066582f3eb80efb6550eaf33503b11777fc3bd6f623c82a4d6565c7823b961acd3d8d41e488de8043967169c8a28406563f64c313089f9d5aff58c31dec9be73d494e211119e2d30621c5f4069bb4ad35b0aa294b19b62b603032e0f3eef224a6d8d1fd2b21906791c340be6155814309c58cdb274693806c5c";
+  const password = prompt("Enter password to access Quick Quotes UK:");
+  if(password !== "gplg123"){
+    document.body.innerHTML = "<h2>Access Denied</h2>";
+    throw new Error("Wrong password");
+  }
+  // Dacă parola e corectă, decriptează conținutul
+  document.body.innerHTML = CryptoJS.AES.decrypt(encrypted, password).toString(CryptoJS.enc.Utf8);
 </script>
-
-<h2>🚐 Quick Quotes UK - 2 Pickups Milk Run</h2>
-
-<input id="pickup1" placeholder="Pickup 1 postcode or address">
-<input id="pickup2" placeholder="Pickup 2 postcode or address (optional)">
-<input id="delivery" placeholder="Delivery postcode or address">
-
-<button onclick="calculateQuotes()">Calculate Quotes</button>
-
-<h3 id="result"></h3>
-<div id="map"></div>
-
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-
-<script>
-let map = L.map('map').setView([51.5,-0.12],6);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-  attribution:'© OpenStreetMap'
-}).addTo(map);
-
-const vehicles = {
-  "SWB": 1.1,
-  "MWB": 1.155,
-  "LWB": 1.21,
-  "XLWB": 1.265,
-  "Luton": 1.32,
-  "7.5T": 2.64,
-  "18T": 2.75,
-  "Arctic": 3.3
-};
-
-async function getCoords(address){
-  try{
-    let url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
-    let res = await axios.get(url);
-    if(res.data.length > 0) return [parseFloat(res.data[0].lat), parseFloat(res.data[0].lon)];
-    return null;
-  }catch(e){
-    alert("Error fetching coordinates");
-    return null;
-  }
-}
-
-async function calculateQuotes(){
-  const pickups = [
-    document.getElementById("pickup1").value,
-    document.getElementById("pickup2").value
-  ].filter(p => p);
-  const delivery = document.getElementById("delivery").value;
-
-  if(pickups.length === 0 || !delivery){
-    alert("Enter at least 1 pickup and delivery");
-    return;
-  }
-
-  const coordsList = [];
-  for(const p of pickups){
-    const c = await getCoords(p);
-    if(!c){ alert(`Pickup not found: ${p}`); return; }
-    coordsList.push(c);
-  }
-  const deliveryCoords = await getCoords(delivery);
-  if(!deliveryCoords){ alert("Delivery address not found"); return; }
-  coordsList.push(deliveryCoords);
-
-  map.eachLayer(layer => {
-    if(layer instanceof L.Marker || layer instanceof L.Polyline) map.removeLayer(layer);
-  });
-
-  coordsList.forEach((c,i)=>{
-    let label = (i < pickups.length) ? `Pickup ${i+1}` : 'Delivery';
-    L.marker(c).addTo(map).bindPopup(label).openPopup();
-  });
-
-  L.polyline(coordsList, {color:'blue', weight:4, opacity:0.7}).addTo(map);
-  map.fitBounds(coordsList);
-
-  let segmentDistances = [];
-  for(let i=0;i<coordsList.length-1;i++){
-    const from = coordsList[i];
-    const to = coordsList[i+1];
-    const route = await axios.get(`https://router.project-osrm.org/route/v1/driving/${from[1]},${from[0]};${to[1]},${to[0]}?overview=false`);
-    segmentDistances.push(route.data.routes[0].distance / 1609);
-  }
-
-  let html = `<table><tr><th>Vehicle</th><th>Cost Distance (£)</th><th>Cost Additional Stop (£)</th><th>Total Courier (£)</th><th>Customer Cost (£)</th></tr>`;
-
-  for(const [veh, rate] of Object.entries(vehicles)){
-    let costDistance = 0;
-    let costAdditional = 0;
-
-    segmentDistances.forEach((dist,i)=>{
-      let cost = dist*rate;
-      if(i === 0) costDistance += cost;
-      else if(i === 1){
-        costDistance += cost;
-        if(pickups.length > 1) costAdditional += 40;
-      } else {
-        costDistance += cost;
-      }
-    });
-
-    const deliveryCost = Math.max(segmentDistances[segmentDistances.length-1]*rate, 65);
-    costDistance = costDistance - (segmentDistances[segmentDistances.length-1]*rate) + deliveryCost;
-
-    const totalCourier = costDistance + costAdditional;
-    const customerCost = totalCourier * 1.05;
-
-    html += `<tr>
-      <td>${veh}</td>
-      <td>£${costDistance.toFixed(2)}</td>
-      <td>£${costAdditional.toFixed(2)}</td>
-      <td>£${totalCourier.toFixed(2)}</td>
-      <td>£${customerCost.toFixed(2)}</td>
-    </tr>`;
-  }
-
-  html += `</table>`;
-  document.getElementById("result").innerHTML = html;
-}
-</script>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </body>
 </html>
