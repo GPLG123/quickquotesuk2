@@ -1,1 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Quick Quotes UK</title>
 
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+<style>
+body{font-family:Arial;padding:20px;background:#f4f6fb;}
+input, select{width:100%;padding:10px;margin:6px 0;border-radius:8px;border:1px solid #ccc;}
+button{width:100%;padding:12px;background:#1d4ed8;color:white;border:none;border-radius:10px;font-size:16px;}
+#map{height:300px;margin-top:20px;border-radius:12px;}
+</style>
+</head>
+<body>
+<h2>🚐 Quick Quotes UK</h2>
+<input id="pickup" placeholder="Pickup postcode or address">
+<input id="delivery" placeholder="Delivery postcode or address">
+
+<select id="vehicle">
+  <option value="1">SWB</option>
+  <option value="1.05">MWB</option>
+  <option value="1.1">LWB</option>
+  <option value="1.15">XLWB</option>
+  <option value="1.2">Luton</option>
+  <option value="2.4">7.5T</option>
+  <option value="2.5">18T</option>
+  <option value="3">Artic</option>
+</select>
+
+<button onclick="calculateQuote()">Calculate Quote</button>
+
+<h3 id="result"></h3>
+<div id="map"></div>
+
+<script>
+let map = L.map('map').setView([51.5,-0.12],6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
+
+async function getCoords(address){
+  let url=`https://nominatim.openstreetmap.org/search?format=json&q=${address}`;
+  let res = await axios.get(url);
+  if(res.data.length>0){return [res.data[0].lat,res.data[0].lon];}
+  return null;
+}
+
+async function calculateQuote(){
+  let pickup = document.getElementById("pickup").value;
+  let delivery = document.getElementById("delivery").value;
+  let tariff = parseFloat(document.getElementById("vehicle").value);
+
+  let p1 = await getCoords(pickup);
+  let p2 = await getCoords(delivery);
+
+  if(!p1 || !p2){alert("Address not found");return;}
+
+  let marker1 = L.marker(p1).addTo(map);
+  let marker2 = L.marker(p2).addTo(map);
+
+  let route = await axios.get(`https://router.project-osrm.org/route/v1/driving/${p1[1]},${p1[0]};${p2[1]},${p2[0]}?overview=false`);
+
+  let distanceMeters = route.data.routes[0].distance;
+  let miles = distanceMeters / 1609;
+
+  let baseTransport = miles * tariff;
+  let transportPrice = Math.max(baseTransport, 50);
+  let clientPrice = transportPrice * 1.05;
+
+  document.getElementById("result").innerHTML =
+    "Distance: "+miles.toFixed(2)+" miles<br>"+
+    "Transport Price: £"+transportPrice.toFixed(2)+"<br>"+
+    "Client Price: £"+clientPrice.toFixed(2);
+
+  map.fitBounds([p1,p2]);
+}
+</script>
+</body>
+</html>
