@@ -37,19 +37,19 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© OpenStreetMap'
 }).addTo(map);
 
-// Lista vehiculelor și tarife
+// Vehicles and updated rates (+10%)
 const vehicles = {
-  "SWB": 1,
-  "MWB": 1.05,
-  "LWB": 1.1,
-  "XLWB": 1.15,
-  "Luton": 1.2,
-  "7.5T": 2.4,
-  "18T": 2.5,
-  "Artic": 3
+  "SWB": 1.1,
+  "MWB": 1.155,
+  "LWB": 1.21,
+  "XLWB": 1.265,
+  "Luton": 1.32,
+  "7.5T": 2.64,
+  "18T": 2.75,
+  "Artic": 3.3
 };
 
-// Funcție pentru a obține coordonate dintr-un address
+// Get coordinates from address
 async function getCoords(address){
   try {
     let url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
@@ -64,7 +64,7 @@ async function getCoords(address){
   }
 }
 
-// Funcție pentru calculul tuturor costurilor
+// Calculate quotes for all vehicles
 async function calculateAllQuotes() {
   const pickup = document.getElementById("pickup").value;
   const delivery = document.getElementById("delivery").value;
@@ -76,24 +76,24 @@ async function calculateAllQuotes() {
 
   if (!p1 || !p2) { alert("Address not found"); return; }
 
-  // Ștergem markerii vechi
+  // Remove old markers
   map.eachLayer((layer) => { if(layer instanceof L.Marker) map.removeLayer(layer); });
 
   L.marker(p1).addTo(map);
   L.marker(p2).addTo(map);
 
-  // Calculăm distanța
+  // Calculate distance using OSRM
   const route = await axios.get(`https://router.project-osrm.org/route/v1/driving/${p1[1]},${p1[0]};${p2[1]},${p2[0]}?overview=false`);
   const distanceMeters = route.data.routes[0].distance;
   const miles = distanceMeters / 1609;
 
-  // Creăm tabelul
+  // Create table
   let html = `<p>Distance: ${miles.toFixed(2)} miles</p>`;
   html += `<table><tr><th>Vehicle</th><th>Transport Price (£)</th><th>Client Price (£)</th></tr>`;
 
   for (const [veh, rate] of Object.entries(vehicles)) {
-    const transportPrice = Math.max(miles * rate, 50); // minimum £50
-    const clientPrice = transportPrice * 1.05;          // +5% marjă
+    const transportPrice = Math.max(miles * rate, 65); // new minimum £65
+    const clientPrice = transportPrice * 1.05;          // +5% margin
     html += `<tr><td>${veh}</td><td>£${transportPrice.toFixed(2)}</td><td>£${clientPrice.toFixed(2)}</td></tr>`;
   }
 
