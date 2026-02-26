@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Quick Quotes UK - Milk Run</title>
+<title>Quick Quotes UK - 2 Pickups Milk Run</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <style>
 body { font-family: Arial, sans-serif; margin: 20px; }
@@ -15,17 +15,15 @@ th, td { padding: 6px 10px; border: 1px solid #555; text-align: center; }
 </head>
 <body>
 
-<h2>🚐 Quick Quotes UK - Milk Run</h2>
+<h2>🚐 Quick Quotes UK - 2 Pickups Milk Run</h2>
 
 <input id="pickup1" placeholder="Pickup 1 postcode or address">
 <input id="pickup2" placeholder="Pickup 2 postcode or address (optional)">
-<input id="pickup3" placeholder="Pickup 3 postcode or address (optional)">
 <input id="delivery" placeholder="Delivery postcode or address">
 
-<button onclick="calculateAllQuotes()">Calculate All Quotes</button>
+<button onclick="calculateQuotes()">Calculate Quotes</button>
 
 <h3 id="result"></h3>
-
 <div id="map"></div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -37,7 +35,6 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
   attribution:'© OpenStreetMap'
 }).addTo(map);
 
-// Vehicles and rates (+10% applied)
 const vehicles = {
   "SWB": 1.1,
   "MWB": 1.155,
@@ -46,7 +43,7 @@ const vehicles = {
   "Luton": 1.32,
   "7.5T": 2.64,
   "18T": 2.75,
-  "Artic": 3.3
+  "Arctic": 3.3
 };
 
 // Get coordinates
@@ -63,11 +60,10 @@ async function getCoords(address){
 }
 
 // Calculate quotes
-async function calculateAllQuotes(){
+async function calculateQuotes(){
   const pickups = [
     document.getElementById("pickup1").value,
-    document.getElementById("pickup2").value,
-    document.getElementById("pickup3").value
+    document.getElementById("pickup2").value
   ].filter(p => p);
   const delivery = document.getElementById("delivery").value;
 
@@ -76,7 +72,6 @@ async function calculateAllQuotes(){
     return;
   }
 
-  // Get coordinates
   const coordsList = [];
   for(const p of pickups){
     const c = await getCoords(p);
@@ -87,16 +82,18 @@ async function calculateAllQuotes(){
   if(!deliveryCoords){ alert("Delivery address not found"); return; }
   coordsList.push(deliveryCoords);
 
-  // Clear old markers and lines
-  map.eachLayer(layer => { if(layer instanceof L.Marker || layer instanceof L.Polyline) map.removeLayer(layer); });
+  // Clear previous markers and polylines
+  map.eachLayer(layer => {
+    if(layer instanceof L.Marker || layer instanceof L.Polyline) map.removeLayer(layer);
+  });
 
   // Add markers
   coordsList.forEach((c,i)=>{
     let label = (i < pickups.length) ? `Pickup ${i+1}` : 'Delivery';
-    L.marker(c).addTo(map).bindPopup(label);
+    L.marker(c).addTo(map).bindPopup(label).openPopup();
   });
 
-  // Draw line connecting all points
+  // Draw polyline connecting all points in order
   L.polyline(coordsList, {color:'blue', weight:4, opacity:0.7}).addTo(map);
   map.fitBounds(coordsList);
 
@@ -109,30 +106,38 @@ async function calculateAllQuotes(){
     segmentDistances.push(route.data.routes[0].distance / 1609); // miles
   }
 
-  // Build table
-  let html = `<table><tr><th>Vehicle</th>`;
-  pickups.forEach((p,i)=>{ html+=`<th>Pickup ${i+1}</th>` });
-  html += `<th>Delivery (Principal)</th><th>Total (£)</th></tr>`;
+  // Build cost table
+  let html = `<table><tr><th>Vehicle</th><th>Cost Distance (£)</th><th>Cost Additional Stop (£)</th><th>Total Courier (£)</th><th>Customer Cost (£)</th></tr>`;
 
   for(const [veh, rate] of Object.entries(vehicles)){
-    let totalTransport = 0;
-    html += `<tr><td>${veh}</td>`;
+    let costDistance = 0;
+    let costAdditional = 0;
+
     segmentDistances.forEach((dist,i)=>{
-      let cost;
-      if(i === 0){
-        // Pickup 1 → fără taxa suplimentară
-        cost = dist*rate;
-      } else if(i < pickups.length){
-        // Pickup 2 și 3 → £40 + dist*rate
-        cost = 40 + dist*rate;
-      } else {
-        // Delivery → minim £65
-        cost = Math.max(dist*rate, 65);
+      let cost = dist*rate;
+      if(i === 0) costDistance += cost;           // Pickup 1
+      else if(i === 1){                           // Pickup 2
+        costDistance += cost;
+        if(pickups.length > 1) costAdditional += 40;
+      } else {                                   // Delivery
+        costDistance += cost;
       }
-      totalTransport += cost;
-      html += `<td>£${cost.toFixed(2)}</td>`;
     });
-    html += `<td>£${(totalTransport*1.05).toFixed(2)}</td></tr>`;
+
+    // Apply minimum £65 for delivery
+    const deliveryCost = Math.max(segmentDistances[segmentDistances.length-1]*rate, 65);
+    costDistance = costDistance - (segmentDistances[segmentDistances.length-1]*rate) + deliveryCost;
+
+    const totalCourier = costDistance + costAdditional;
+    const customerCost = totalCourier * 1.05;
+
+    html += `<tr>
+      <td>${veh}</td>
+      <td>£${costDistance.toFixed(2)}</td>
+      <td>£${costAdditional.toFixed(2)}</td>
+      <td>£${totalCourier.toFixed(2)}</td>
+      <td>£${customerCost.toFixed(2)}</td>
+    </tr>`;
   }
 
   html += `</table>`;
@@ -142,4 +147,3 @@ async function calculateAllQuotes(){
 
 </body>
 </html>
--
