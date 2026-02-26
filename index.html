@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Quick Quotes UK</title>
+  <title>Quick Quotes UK - Milk Run</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
@@ -15,10 +15,12 @@
 </head>
 <body>
 
-<h2>🚐 Quick Quotes UK</h2>
+<h2>🚐 Quick Quotes UK - Milk Run</h2>
 
 <input id="pickup" placeholder="Pickup postcode or address">
-<input id="delivery" placeholder="Delivery postcode or address">
+<input id="delivery1" placeholder="Delivery postcode 1">
+<input id="delivery2" placeholder="Delivery postcode 2 (optional)">
+<input id="delivery3" placeholder="Delivery postcode 3 (optional)">
 
 <button onclick="calculateAllQuotes()">Calculate All Quotes</button>
 
@@ -37,7 +39,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© OpenStreetMap'
 }).addTo(map);
 
-// Vehicles and updated rates (+10%)
+// Vehicles and rates (+10% applied already)
 const vehicles = {
   "SWB": 1.1,
   "MWB": 1.155,
@@ -64,46 +66,64 @@ async function getCoords(address){
   }
 }
 
-// Calculate quotes for all vehicles
+// Calculate quotes for all vehicles (milk run)
 async function calculateAllQuotes() {
   const pickup = document.getElementById("pickup").value;
-  const delivery = document.getElementById("delivery").value;
+  const deliveries = [
+    document.getElementById("delivery1").value,
+    document.getElementById("delivery2").value,
+    document.getElementById("delivery3").value
+  ].filter(d => d); // only non-empty deliveries
 
-  if(!pickup || !delivery){ alert("Please enter both pickup and delivery"); return; }
+  if(!pickup || deliveries.length === 0){ alert("Enter pickup and at least 1 delivery"); return; }
 
-  const p1 = await getCoords(pickup);
-  const p2 = await getCoords(delivery);
+  // Get coordinates
+  const coordsList = [];
+  const pickupCoords = await getCoords(pickup);
+  if(!pickupCoords){ alert("Pickup address not found"); return; }
+  coordsList.push(pickupCoords);
 
-  if (!p1 || !p2) { alert("Address not found"); return; }
+  for(const d of deliveries){
+    const c = await getCoords(d);
+    if(!c){ alert(`Delivery address not found: ${d}`); return; }
+    coordsList.push(c);
+  }
 
-  // Remove old markers
-  map.eachLayer((layer) => { if(layer instanceof L.Marker) map.removeLayer(layer); });
+  // Clear old markers
+  map.eachLayer(layer => { if(layer instanceof L.Marker) map.removeLayer(layer); });
 
-  L.marker(p1).addTo(map);
-  L.marker(p2).addTo(map);
+  // Place markers
+  coordsList.forEach((c, i) => {
+    let label = (i===0) ? "Pickup" : `Delivery ${i}`;
+    L.marker(c).addTo(map).bindPopup(label).openPopup();
+  });
 
-  // Calculate distance using OSRM
-  const route = await axios.get(`https://router.project-osrm.org/route/v1/driving/${p1[1]},${p1[0]};${p2[1]},${p2[0]}?overview=false`);
-  const distanceMeters = route.data.routes[0].distance;
-  const miles = distanceMeters / 1609;
+  // Calculate total distance using OSRM route between consecutive points
+  let totalDistance = 0;
+  for(let i=0; i<coordsList.length-1; i++){
+    const from = coordsList[i];
+    const to = coordsList[i+1];
+    const route = await axios.get(`https://router.project-osrm.org/route/v1/driving/${from[1]},${from[0]};${to[1]},${to[0]}?overview=false`);
+    totalDistance += route.data.routes[0].distance; // in meters
+  }
+  const miles = totalDistance / 1609; // convert to miles
 
-  // Create table
-  let html = `<p>Distance: ${miles.toFixed(2)} miles</p>`;
+  // Build result table
+  let html = `<p>Total distance: ${miles.toFixed(2)} miles</p>`;
   html += `<table><tr><th>Vehicle</th><th>Transport Price (£)</th><th>Client Price (£)</th></tr>`;
 
   for (const [veh, rate] of Object.entries(vehicles)) {
-    const transportPrice = Math.max(miles * rate, 65); // new minimum £65
-    const clientPrice = transportPrice * 1.05;          // +5% margin
+    const transportPrice = Math.max(miles * rate, 65); // minimum £65
+    const clientPrice = transportPrice * 1.05; // +5% margin
     html += `<tr><td>${veh}</td><td>£${transportPrice.toFixed(2)}</td><td>£${clientPrice.toFixed(2)}</td></tr>`;
   }
 
   html += `</table>`;
   document.getElementById("result").innerHTML = html;
 
-  map.fitBounds([p1, p2]);
+  map.fitBounds(coordsList);
 }
 </script>
-  -
 
 </body>
 </html>
