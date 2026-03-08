@@ -2,23 +2,25 @@
 <html lang="ro">
 <head>
 <meta charset="UTF-8">
-<title>Run Sheet Drivers</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Driver Daily Report ATR</title>
 
 <style>
-body{
-font-family:Arial;
-margin:30px;
-}
+body{font-family:Arial;margin:20px;}
+
+label{font-weight:bold;display:block;margin-top:10px;}
 
 input,select,textarea{
 width:220px;
 padding:6px;
-margin:6px 0;
+margin:4px 0 10px 0;
 }
+
+textarea{width:100%;height:50px;}
 
 button{
 padding:8px 15px;
-margin-top:12px;
+margin:10px 5px 0 0;
 cursor:pointer;
 }
 
@@ -35,10 +37,88 @@ padding:6px;
 text-align:center;
 }
 
-th{
-background:#eee;
-}
+th{background:#eee;}
 </style>
+
+</head>
+
+<body>
+
+<h2>Driver Daily Report ATR</h2>
+
+Vehicle<br>
+<input id="vehicle">
+
+Run<br>
+<input id="run">
+
+Specification<br>
+<select id="specification">
+<option value="">Select</option>
+<option>Collection Only</option>
+<option>Delivery Only</option>
+<option>Collection and Delivery</option>
+</select>
+
+Location<br>
+<select id="location">
+<option value="">Select</option>
+<option>AC</option>
+<option>ASC</option>
+<option>BA WC</option>
+<option>LANDMARK GLOBAL</option>
+<option>Swissport</option>
+<option>BREAK</option>
+<option value="manual">Other Manual</option>
+</select>
+
+<input id="manualLocation" style="display:none" placeholder="Manual location">
+
+Arrival<br>
+<input type="time" id="arrival">
+
+Booking<br>
+<input type="time" id="booking">
+
+Loading<br>
+<input type="time" id="loading">
+
+Departure<br>
+<input type="time" id="departure">
+
+Comment<br>
+<textarea id="comment"></textarea>
+
+<br>
+
+<label>Select Date</label>
+<input type="date" id="filterDate">
+
+<br>
+
+<button onclick="addEntry()">Add Location</button>
+<button onclick="downloadCSV()">Send to Download</button>
+<button onclick="exportGoogleSheet()">Export Google Sheet</button>
+
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Vehicle</th>
+<th>Run</th>
+<th>Location</th>
+<th>Arrival</th>
+<th>Booking</th>
+<th>Loading</th>
+<th>Departure</th>
+<th>Specification</th>
+<th>Comment</th>
+<th>Delete</th>
+</tr>
+</thead>
+
+<tbody id="tableBody"></tbody>
+</table>
 
 <script>
 
@@ -46,61 +126,31 @@ const API_URL="https://script.google.com/macros/s/AKfycbylgggp-wjd_uMWz5997_7JAE
 
 let jobs=[];
 
-async function addEntry(){
-
-let vehicle=document.getElementById("vehicle").value.trim();
-let run=document.getElementById("run").value.trim();
-let specification=document.getElementById("specification").value;
-let location=document.getElementById("location").value;
-
-let arrival=document.getElementById("arrival").value;
-let booking=document.getElementById("booking").value;
-let loading=document.getElementById("loading").value;
-let departure=document.getElementById("departure").value;
-let comment=document.getElementById("comment").value.trim();
-
-if(!vehicle || !run || !specification || !location){
-alert("Complete required fields");
-return;
-}
-
-let job={
-date:new Date().toISOString().split("T")[0],
-vehicle,
-run,
-specification,
-location,
-arrival,
-booking,
-loading,
-departure,
-comment
+// manual location
+document.getElementById("location").onchange=function(){
+document.getElementById("manualLocation").style.display=
+this.value==="manual" ? "block":"none";
 };
 
-jobs.push(job);
-
-renderTable();
-
-alert("Job added locally");
-}
-
+// render table
 function renderTable(){
 
 let tbody=document.getElementById("tableBody");
 tbody.innerHTML="";
 
-jobs.forEach((j,i)=>{
+jobs.forEach((j,index)=>{
 
 let row=tbody.insertRow();
 
 row.insertCell().innerText=j.date;
 row.insertCell().innerText=j.vehicle;
 row.insertCell().innerText=j.run;
-row.insertCell().innerText=j.specification;
+row.insertCell().innerText=j.location;
 row.insertCell().innerText=j.arrival;
 row.insertCell().innerText=j.booking;
 row.insertCell().innerText=j.loading;
 row.insertCell().innerText=j.departure;
+row.insertCell().innerText=j.specification;
 row.insertCell().innerText=j.comment;
 
 let del=row.insertCell();
@@ -109,7 +159,7 @@ let btn=document.createElement("button");
 btn.innerText="❌";
 
 btn.onclick=()=>{
-jobs.splice(i,1);
+jobs.splice(index,1);
 renderTable();
 };
 
@@ -119,10 +169,69 @@ del.appendChild(btn);
 
 }
 
+// add location
+function addEntry(){
+
+let vehicle=document.getElementById("vehicle").value.trim();
+let run=document.getElementById("run").value.trim();
+let specification=document.getElementById("specification").value;
+
+let locationSelect=document.getElementById("location").value;
+let manual=document.getElementById("manualLocation").value.trim();
+
+let location=locationSelect==="manual"?manual:locationSelect;
+
+if(!vehicle||!run||!specification||!location){
+alert("Complete required fields");
+return;
+}
+
+jobs.push({
+date:document.getElementById("filterDate").value,
+vehicle,
+run,
+specification,
+location,
+arrival:document.getElementById("arrival").value,
+booking:document.getElementById("booking").value,
+loading:document.getElementById("loading").value,
+departure:document.getElementById("departure").value,
+comment:document.getElementById("comment").value
+});
+
+renderTable();
+
+}
+
+// download CSV
+function downloadCSV(){
+
+if(jobs.length===0){
+alert("No data");
+return;
+}
+
+let csv="Date,Vehicle,Run,Location,Arrival,Booking,Loading,Departure,Specification,Comment\n";
+
+jobs.forEach(j=>{
+csv+=`${j.date},${j.vehicle},${j.run},${j.location},${j.arrival},${j.booking},${j.loading},${j.departure},${j.specification},${j.comment}\n`;
+});
+
+let blob=new Blob([csv],{type:"text/csv"});
+let url=URL.createObjectURL(blob);
+
+let a=document.createElement("a");
+a.href=url;
+a.download="RunSheet.csv";
+a.click();
+
+}
+
+// export google sheet
 async function exportGoogleSheet(){
 
 if(jobs.length===0){
-alert("No jobs to send");
+alert("No data to export");
 return;
 }
 
@@ -136,7 +245,7 @@ body:JSON.stringify({entries:jobs})
 
 let txt=await res.text();
 
-alert("Server response: "+txt);
+alert("Google Sheet Response: "+txt);
 
 jobs=[];
 renderTable();
@@ -147,97 +256,7 @@ alert("Send failed");
 
 }
 
-function downloadExcel(){
-
-if(jobs.length===0){
-alert("No data to download");
-return;
-}
-
-let csv="Date,Vehicle,Run,Specification,Arrival,Booking,Loading,Departure,Comment\n";
-
-jobs.forEach(j=>{
-csv+=`${j.date},${j.vehicle},${j.run},${j.specification},${j.arrival},${j.booking},${j.loading},${j.departure},${j.comment}\n`;
-});
-
-let blob=new Blob([csv],{type:"text/csv"});
-let url=URL.createObjectURL(blob);
-
-let a=document.createElement("a");
-a.href=url;
-a.download="RunSheetDrivers.csv";
-a.click();
-}
-
 </script>
-
-</head>
-
-<body>
-
-<h2>Driver Daily Report ATR</h2>
-
-Vehicle<br>
-<input id="vehicle"><br>
-
-Run<br>
-<input id="run"><br>
-
-Specification<br>
-<select id="specification">
-<option value="">Select</option>
-<option>Collection Only</option>
-<option>Delivery Only</option>
-<option>Collection and Delivery</option>
-</select><br>
-
-Location<br>
-<select id="location">
-<option value="">Select</option>
-<option>AC</option>
-<option>ASC</option>
-<option>BA WC</option>
-<option>LANDMARK GLOBAL</option>
-<option>Swissport</option>
-</select><br>
-
-Arrival<br>
-<input type="time" id="arrival"><br>
-
-Booking<br>
-<input type="time" id="booking"><br>
-
-Loading<br>
-<input type="time" id="loading"><br>
-
-Departure<br>
-<input type="time" id="departure"><br>
-
-Comment<br>
-<textarea id="comment"></textarea><br>
-
-<button onclick="addEntry()">Add Location</button>
-<button onclick="downloadExcel()">Send to Download</button>
-<button onclick="exportGoogleSheet()">Export Google Sheet</button>
-
-<table>
-<thead>
-<tr>
-<th>Date</th>
-<th>Vehicle</th>
-<th>Run</th>
-<th>Specification</th>
-<th>Arrival</th>
-<th>Booking</th>
-<th>Loading</th>
-<th>Departure</th>
-<th>Comment</th>
-<th>Delete</th>
-</tr>
-</thead>
-
-<tbody id="tableBody"></tbody>
-</table>
 
 </body>
 </html>
