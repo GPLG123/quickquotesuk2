@@ -100,13 +100,11 @@ td[contenteditable="true"]:focus { outline:2px solid #6ca0dc; background-color:#
 <input type="date" id="filterDate" class="short">
 
 <div id="alertExcel">
-⚠️ Important: After adding all locations, make sure to click <strong>Send Excel</strong> to save your daily report locally! ⚠️
+⚠️ Important: After adding all locations, make sure to click <strong>Send Excel</strong> to save your daily report to Google Sheets! ⚠️
 </div>
 
-<button id="sendExcelBtn" type="button">Send Excel</button>
-
-<!-- BUTON SPECIAL PENTRU EXPORT COMPLET -->
-<button onclick="exportAllData()" style="background-color:#4CAF50;color:white;">Export All Data</button>
+<button id="sendExcelBtn" type="button">Send to Google Sheets</button>
+<button onclick="exportAllData()" style="background-color:#4CAF50;color:white;">Export All Data (Local)</button>
 
 <table id="reportTable">
 <thead>
@@ -128,13 +126,10 @@ td[contenteditable="true"]:focus { outline:2px solid #6ca0dc; background-color:#
 </table>
 
 <script>
-// STORAGE ATR
 const STORAGE_KEY = "ATR_dailyData";
-
-// Data storage
 let dailyData = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
 
-// Show manual location input if "Other (Manual)" selected
+// Show manual location input
 const locationSelect = document.getElementById('location');
 const manualLocationInput = document.getElementById('manualLocation');
 locationSelect.addEventListener('change', ()=>{
@@ -163,7 +158,6 @@ function loadTable(date = filterDate.value){
       row.insertCell().textContent = entry.specification; row.cells[8].contentEditable=true;
       row.insertCell().textContent = entry.comment; row.cells[9].contentEditable=true;
 
-      // Delete button
       const deleteCell = row.insertCell();
       const btn = document.createElement("button");
       btn.textContent = "❌";
@@ -228,7 +222,6 @@ document.querySelector("#reportTable tbody").addEventListener("input", function(
   if(!dailyData[dateVal]) return;
 
   const rows = document.querySelectorAll("#reportTable tbody tr");
-
   rows.forEach((row)=>{
     const cells = row.cells;
     const runVal = cells[2].textContent;
@@ -256,41 +249,32 @@ document.querySelector("#reportTable tbody").addEventListener("input", function(
 filterDate.addEventListener('change', ()=>loadTable());
 run.addEventListener('input', ()=>loadTable());
 
-// Export Excel pentru ziua curentă (buton șofer)
+// Send to Google Sheets
 sendExcelBtn.addEventListener('click', ()=>{
   const dateVal = filterDate.value;
   const runFilter = run.value.trim();
   if(!dailyData[dateVal]) return alert("No data for this date");
 
-  let rows = [];
+  let entries = [];
   Object.keys(dailyData[dateVal]).forEach(runNum=>{
     if(runFilter && runNum!==runFilter) return;
     dailyData[dateVal][runNum].forEach(entry=>{
-      rows.push([
-        entry.date, entry.vehicle, entry.run, entry.location,
-        entry.arrival, entry.booking, entry.loading, entry.departure,
-        entry.specification, entry.comment
-      ]);
+      entries.push(entry);
     });
   });
 
-  if(rows.length===0) return alert("No rows to export");
+  if(entries.length===0) return alert("No rows to send");
 
-  const sheetData = [
-    ["Date","Vehicle","Run","Location","Arrival","Booking","Loading","Departure","Specification","Comment"],
-    ...rows
-  ];
-
-  const ws = XLSX.utils.aoa_to_sheet(sheetData);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Daily Report");
-
-  let fileName = "ATR_Driver_Report_"+dateVal;
-  if(runFilter) fileName += "_Run_"+runFilter;
-  XLSX.writeFile(wb, fileName+".xlsx");
+  fetch("APPS_SCRIPT_WEB_APP_URL", { // <--- pune aici URL-ul Apps Script
+    method: "POST",
+    body: JSON.stringify({ date: dateVal, run: runFilter || "all", entries: entries }),
+    headers: { "Content-Type": "application/json" }
+  }).then(r => r.text())
+    .then(t => alert("Data sent to Google Sheets!"))
+    .catch(e => alert("Error sending data: " + e));
 });
 
-// Export complet pentru tine (toate zilele)
+// Export complet pentru descărcare locală
 function exportAllData() {
   const allData = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
   if(Object.keys(allData).length === 0) return alert("No data available");
@@ -320,7 +304,7 @@ function exportAllData() {
     }
   });
 
-  alert("All data exported by date!");
+  alert("All data exported locally by date!");
 }
 
 // Initialize
