@@ -3,94 +3,106 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Driver Daily Report ATR</title>
+<title>Driver Daily Report - ARCY</title>
+
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 
 <style>
-body{font-family:Arial;margin:20px;}
-label{font-weight:bold;display:block;margin-top:10px;}
-input,select,textarea{width:220px;padding:6px;margin-top:4px;margin-bottom:10px;}
-textarea{width:100%;height:40px;}
-button{padding:8px 15px;margin-top:10px;cursor:pointer;}
-
-table{width:100%;border-collapse:collapse;margin-top:20px;font-size:14px;}
-th,td{border:1px solid #888;padding:6px;text-align:center;}
-th{background:#eee;}
+body { font-family: Arial, sans-serif; margin: 20px; }
+label { font-weight: bold; margin-top: 10px; display: block; }
+input, select, textarea { margin-top:4px; margin-bottom:10px; padding:6px; width:220px; box-sizing:border-box;}
+textarea { width:100%; height:40px; resize:vertical;}
+button { padding:8px 15px; margin-top:10px; cursor:pointer;}
+table { width:100%; border-collapse: collapse; margin-top:20px; font-size:14px;}
+th, td { border:1px solid #888; padding:6px 8px; text-align:center;}
+th { background-color:#eee; }
+.short { width:120px;}
+#alertExcel { margin-top:15px; background-color:#f8d7da; border:1px solid #f5c6cb; color:#721c24; padding:10px; font-weight:bold; }
+.deleteBtn { background-color:#dc3545; color:white; border:none; padding:4px 8px; cursor:pointer; border-radius:3px; }
 </style>
-
 </head>
-
 <body>
 
-<h2>Driver Daily Report ATR</h2>
+<h2>Driver Daily Report - ARCY</h2>
 
-<label>Vehicle</label>
-<input id="vehicle" placeholder="Vehicle">
+<label>Vehicle:</label>
+<input type="text" id="vehicle">
 
-<label>Run</label>
-<input id="run" placeholder="Run #">
+<label>Run #:</label>
+<input type="text" id="run">
 
-<label>Specification</label>
+<hr>
+
+<label>Collection and Delivery Specification:</label>
 <select id="specification">
-<option value="">Select</option>
-<option>Collection Only</option>
-<option>Delivery Only</option>
-<option>Collection and Delivery</option>
+  <option value="">Select specification</option>
+  <option>Collection Only</option>
+  <option>Delivery Only</option>
+  <option>Collection and Delivery</option>
 </select>
 
-<label>Location</label>
-<select id="location">
-<option value="">Select</option>
-<option>AC</option>
-<option>ASC</option>
-<option>BA WC</option>
-<option>BA WC 2nd</option>
-<option>Ba XPS</option>
-<option>DAI</option>
-<option>Dnata CP</option>
-<option>Dnata CX</option>
-<option>Dnata U1</option>
-<option>Dnata U2</option>
-<option>Dnata U3</option>
-<option>Dnata VS/Delta</option>
-<option>HCH</option>
-<option>JL</option>
-<option>LG</option>
-<option>LANDMARK GLOBAL</option>
-<option>MW</option>
-<option>Scylla Rd</option>
-<option>Scylla U1</option>
-<option>WFS 549</option>
-<option>WFS 550</option>
-<option>ECMS</option>
-<option>Swissport</option>
-<option>BREAK</option>
+<label>Collection and Delivery Point:</label>
+<select id="location" required>
+  <option value="">Select</option>
+  <option value="AC">AC</option>
+  <option value="ASC">ASC</option>
+  <option value="BA WC">BA WC</option>
+  <option value="BA WC 2nd">BA WC 2nd</option>
+  <option value="Ba XPS">Ba XPS</option>
+  <option value="DAI">DAI</option>
+  <option value="Dnata CP">Dnata CP</option>
+  <option value="Dnata CX">Dnata CX</option>
+  <option value="Dnata U1">Dnata U1</option>
+  <option value="Dnata U2">Dnata U2</option>
+  <option value="Dnata U3">Dnata U3</option>
+  <option value="Dnata VS/Delta">Dnata VS/Delta</option>
+  <option value="HCH">HCH</option>
+  <option value="HCH Horton">HCH Horton</option>
+  <option value="JL">JL</option>
+  <option value="LG">LG</option>
+  <option value="LANDMARK GLOBAL">LANDMARK GLOBAL</option>
+  <option value="MW">MW</option>
+  <option value="Scylla Rd">Scylla Rd</option>
+  <option value="Scylla U1">Scylla U1</option>
+  <option value="WFS 549">WFS 549</option>
+  <option value="WFS 550">WFS 550</option>
+  <option value="ECMS">ECMS</option>
+  <option value="Swissport">Swissport</option>
+  <option value="BREAK">BREAK</option>
+  <option value="manual">Other (Manual)</option>
 </select>
 
-<label>Arrival</label>
+<input type="text" id="manualLocation" placeholder="Enter manual location" style="display:none; margin-top:6px; width: 220px;">
+
+<label>Arrival Time:</label>
 <input type="time" id="arrival">
 
-<label>Booking</label>
+<label>Booking Time:</label>
 <input type="time" id="booking">
 
-<label>Loading</label>
+<label>Loading:</label>
 <input type="time" id="loading">
 
-<label>Departure</label>
+<label>Departure:</label>
 <input type="time" id="departure">
 
-<label>Comment</label>
+<label>Comment:</label>
 <textarea id="comment"></textarea>
 
 <button id="addEntryBtn">Add Location</button>
 
 <hr>
 
-<label>Date</label>
+<label>Select Date to View / Generate Excel:</label>
 <input type="date" id="filterDate">
 
-<button id="sendExcelBtn">Send to Google Sheet</button>
+<div id="alertExcel">
+⚠️ After adding all locations, click <strong>Send Excel</strong> to save report.
+</div>
 
-<table>
+<button id="sendExcelBtn">Send Excel</button>
+
+<table id="reportTable">
 <thead>
 <tr>
 <th>Date</th>
@@ -103,105 +115,154 @@ th{background:#eee;}
 <th>Departure</th>
 <th>Specification</th>
 <th>Comment</th>
+<th>Action</th>
 </tr>
 </thead>
-
-<tbody id="reportTable"></tbody>
+<tbody></tbody>
 </table>
 
 <script>
+const HOURLY_RATE = 37.5;
 
-const GOOGLE_SCRIPT_URL =
-"https://script.google.com/macros/s/AKfycbylgggp-wjd_uMWz5997_7JAEHCUt-0pZoEZLTk_nM/exec";
+// Folosim localStorage separat pentru ARCY
+let dailyData = JSON.parse(localStorage.getItem('dailyData_ARCY') || "{}");
 
-let entries=[];
-
-/* Add Entry */
-
-addEntryBtn.onclick=function(){
-
-let vehicle=vehicleInput.value;
-let run=runInput.value;
-let specification=specificationInput.value;
-let location=locationInput.value;
-
-if(!vehicle||!run||!specification||!location){
-alert("Complete required fields");
-return;
-}
-
-let entry={
-date:filterDate.value||new Date().toISOString().split('T')[0],
-vehicle,
-run,
-location,
-arrival:arrival.value,
-booking:booking.value,
-loading:loading.value,
-departure:departure.value,
-specification,
-comment:comment.value
-};
-
-entries.push(entry);
-renderTable();
-
-};
-
-/* Render Table */
-
-function renderTable(){
-
-let tbody=document.getElementById("reportTable");
-tbody.innerHTML="";
-
-entries.forEach((e,i)=>{
-
-let row=tbody.insertRow();
-
-row.insertCell().textContent=e.date;
-row.insertCell().textContent=e.vehicle;
-row.insertCell().textContent=e.run;
-row.insertCell().textContent=e.location;
-row.insertCell().textContent=e.arrival;
-row.insertCell().textContent=e.booking;
-row.insertCell().textContent=e.loading;
-row.insertCell().textContent=e.departure;
-row.insertCell().textContent=e.specification;
-row.insertCell().textContent=e.comment;
-
+const locationSelect = document.getElementById('location');
+const manualLocationInput = document.getElementById('manualLocation');
+locationSelect.addEventListener('change', ()=>{
+  manualLocationInput.style.display = (locationSelect.value === 'manual') ? 'block' : 'none';
 });
 
+function timeToMinutes(t){ if(!t) return null; const [h,m]=t.split(":").map(Number); return h*60+m; }
+function roundTo30(mins){ let r=mins%30; return (r<=15)?mins-r:mins+(30-r); }
+
+function loadTable(date = filterDate.value){
+  const tbody = document.querySelector("#reportTable tbody");
+  tbody.innerHTML = "";
+  const runFilter = run.value.trim();
+  if(!dailyData[date]) return;
+  Object.keys(dailyData[date]).forEach(runKey=>{
+    if(runFilter && runKey !== runFilter) return;
+    dailyData[date][runKey].forEach((entry, idx)=>{
+      // Afișăm doar joburile ARCY
+      if(entry.source && entry.source !== "ARCY") return;
+
+      const row = tbody.insertRow();
+      row.insertCell().textContent = entry.date;
+      row.insertCell().textContent = entry.vehicle;
+      row.insertCell().textContent = entry.run;
+      row.insertCell().textContent = entry.location;
+      row.insertCell().textContent = entry.arrival;
+      row.insertCell().textContent = entry.booking;
+      row.insertCell().textContent = entry.loading;
+      row.insertCell().textContent = entry.departure;
+      row.insertCell().textContent = entry.specification;
+      row.insertCell().textContent = entry.comment;
+
+      // Delete button cu confirmare
+      const actionCell = row.insertCell();
+      const delBtn = document.createElement('button');
+      delBtn.textContent = "Delete";
+      delBtn.className = "deleteBtn";
+      delBtn.onclick = ()=>{
+        if(confirm("Sunteți sigur că vreți să ștergeți acest rând?")) {
+          dailyData[date][runKey].splice(idx,1);
+          localStorage.setItem('dailyData_ARCY', JSON.stringify(dailyData));
+          loadTable(date);
+        }
+      };
+      actionCell.appendChild(delBtn);
+    });
+  });
 }
 
-/* Send to Google Sheet */
+filterDate.addEventListener('change', ()=>loadTable(filterDate.value));
+run.addEventListener('input', ()=>loadTable(filterDate.value));
 
-sendExcelBtn.onclick=async function(){
-
-if(entries.length===0){
-alert("No data");
-return;
-}
-
-try{
-
-await fetch(GOOGLE_SCRIPT_URL,{
-method:"POST",
-mode:"no-cors",
-headers:{
-"Content-Type":"application/json"
-},
-body:JSON.stringify({entries})
+addEntryBtn.addEventListener('click', ()=>{
+  const vehicleVal = vehicle.value.trim();
+  const runVal = run.value.trim();
+  const date = new Date().toISOString().split('T')[0];
+  const specificationVal = specification.value;
+  let locationVal = (locationSelect.value === 'manual') ? manualLocationInput.value.trim() : locationSelect.value;
+  const arrivalVal = arrival.value;
+  const bookingVal = booking.value;
+  const loadingVal = loading.value;
+  const departureVal = departure.value;
+  const commentVal = comment.value.trim();
+  if(!vehicleVal||!runVal||!locationVal||!specificationVal) return alert("Fill required fields");
+  if(!dailyData[date]) dailyData[date]={};
+  if(!dailyData[date][runVal]) dailyData[date][runVal]=[];
+  dailyData[date][runVal].push({
+    source: "ARCY", // <- marcam ca job ARCY
+    date, vehicle: vehicleVal, run: runVal, location: locationVal,
+    arrival: arrivalVal, booking: bookingVal, loading: loadingVal,
+    departure: departureVal, specification: specificationVal, comment: commentVal
+  });
+  localStorage.setItem('dailyData_ARCY', JSON.stringify(dailyData));
+  loadTable(date);
 });
 
-alert("✅ Sent to Google Sheet");
+// Export Excel
+sendExcelBtn.addEventListener('click', ()=>{
+  const selectedDate = filterDate.value;
+  const runFilter = run.value.trim();
+  if(!dailyData[selectedDate]) return alert("No data for date");
 
-}catch(err){
-alert("Send failed");
-}
+  let arrivals=[], departures=[], rows=[];
 
+  Object.keys(dailyData[selectedDate]).forEach(runKey=>{
+    if(runFilter && runKey !== runFilter) return;
+    dailyData[selectedDate][runKey].forEach(entry=>{
+      // Filtrăm joburile non-ARCY
+      if(entry.source && entry.source !== "ARCY") return;
+
+      rows.push([
+        entry.date, entry.vehicle, entry.run, entry.location,
+        entry.arrival, entry.booking, entry.loading, entry.departure,
+        entry.specification, entry.comment
+      ]);
+      if(entry.arrival) arrivals.push(timeToMinutes(entry.arrival));
+      if(entry.departure) departures.push(timeToMinutes(entry.departure));
+    });
+  });
+
+  if(rows.length===0) return alert("No data for selected run/date");
+
+  let totalHours=0;
+  if(arrivals.length && departures.length){
+    let start=Math.min(...arrivals);
+    let end=Math.max(...departures);
+    totalHours = roundTo30(end-start)/60;
+  }
+  let totalCost = totalHours * HOURLY_RATE;
+
+  const sheetData = [
+    ["TOTAL HOURS", totalHours],
+    ["HOURLY RATE (£)", HOURLY_RATE],
+    ["TOTAL COST (£)", totalCost],
+    [],
+    ["Date","Vehicle","Run","Location","Arrival","Booking","Loading","Departure","Specification","Comment"],
+    ...rows
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(sheetData);
+  ws["B1"].z="0.00"; ws["B2"].z="£0.00"; ws["B3"].z="£0.00";
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Daily Report");
+
+  let fileName = "Driver_Report_"+selectedDate;
+  if(runFilter) fileName += "_Run_"+runFilter;
+
+  XLSX.writeFile(wb, fileName+".xlsx");
+});
+
+// Initialize
+window.onload = function(){
+  filterDate.value = new Date().toISOString().split('T')[0];
+  loadTable();
 };
-
 </script>
 
 </body>
