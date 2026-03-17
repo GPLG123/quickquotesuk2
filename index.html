@@ -28,10 +28,10 @@ th:nth-child(10), td:nth-child(10) { width:350px; }
 <h2>Driver Daily Report ATR</h2>
 
 <label for="vehicle">Vehicle:</label>
-<input type="text" id="vehicle" class="short" placeholder="Vehicle">
+<input type="text" id="vehicle" class="short">
 
 <label for="run">Run:</label>
-<input type="text" id="run" class="short" placeholder="Run #">
+<input type="text" id="run" class="short">
 
 <hr>
 
@@ -89,7 +89,7 @@ th:nth-child(10), td:nth-child(10) { width:350px; }
 <input type="text" id="qty" class="short">
 
 <label for="comment">Comment:</label>
-<textarea id="comment" placeholder="Add comment"></textarea>
+<textarea id="comment"></textarea>
 
 <button id="addEntryBtn" type="button">Add Location</button>
 
@@ -99,7 +99,7 @@ th:nth-child(10), td:nth-child(10) { width:350px; }
 <input type="date" id="filterDate" class="short">
 
 <div id="alertExcel">
-⚠️ Important: After adding all locations, make sure to click <strong>Send Excel</strong> to save your daily report locally! ⚠️
+⚠️ Important: After adding all locations, click <strong>Send Excel</strong> to save your report!
 </div>
 
 <button id="sendExcelBtn" type="button">Send Excel</button>
@@ -136,7 +136,6 @@ locationSelect.addEventListener('change', ()=>{
 });
 
 function loadTable(date = filterDate.value){
-
   const tbody = document.querySelector("#reportTable tbody");
   tbody.innerHTML = "";
   const runKey = run.value.trim();
@@ -148,11 +147,21 @@ function loadTable(date = filterDate.value){
 
     dailyData[date][runNum].forEach(entry=>{
       const row = tbody.insertRow();
-      
-      Object.values(entry).forEach(value=>{
+
+      [
+        entry.date,
+        entry.vehicle,
+        entry.run,
+        entry.location,
+        entry.arrival,
+        entry.booking,
+        entry.departure,
+        entry.specification,
+        entry.qty,
+        entry.comment
+      ].forEach(value=>{
         const cell = row.insertCell();
-        cell.textContent = value;
-        cell.contentEditable = false; // ⚠️ Make table cells non-editable
+        cell.textContent = value ?? "";
       });
 
       const deleteCell = row.insertCell();
@@ -160,7 +169,7 @@ function loadTable(date = filterDate.value){
       btn.textContent = "❌";
 
       btn.onclick = function(){
-        if(confirm("⚠️ Atenție! Ștergerea acestui rând este permanentă. Ești sigur că vrei să ștergi această intrare?")) {
+        if(confirm("Delete this entry?")) {
           dailyData[entry.date][entry.run] =
             dailyData[entry.date][entry.run].filter(e => e !== entry);
 
@@ -236,16 +245,16 @@ sendExcelBtn.addEventListener('click', ()=>{
     if(runFilter && runNum!==runFilter) return;
     dailyData[dateVal][runNum].forEach(entry=>{
       rows.push([
-        entry.date,
-        entry.vehicle,
-        entry.run,
-        entry.location,
-        entry.arrival,
-        entry.booking,
-        entry.departure,
-        entry.specification,
-        entry.qty,
-        entry.comment
+        entry.date ?? "",
+        entry.vehicle ?? "",
+        entry.run ?? "",
+        entry.location ?? "",
+        entry.arrival ?? "",
+        entry.booking ?? "",
+        entry.departure ?? "",
+        entry.specification ?? "",
+        entry.qty ?? "",
+        entry.comment ?? ""
       ]);
     });
   });
@@ -258,6 +267,12 @@ sendExcelBtn.addEventListener('click', ()=>{
   ];
 
   const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+  ws['!ref'] = XLSX.utils.encode_range({
+    s: { r: 0, c: 0 },
+    e: { r: sheetData.length - 1, c: sheetData[0].length - 1 }
+  });
+
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Daily Report");
 
@@ -271,10 +286,6 @@ sendExcelBtn.addEventListener('click', ()=>{
 window.onload = function(){
   populateFilterDate();
   if(!filterDate.value) filterDate.value = new Date().toISOString().split('T')[0];
-  ['arrival','booking','departure'].forEach(id=>{
-    if(!document.getElementById(id).value)
-      document.getElementById(id).value = (id==='departure')?'09:00':'08:00';
-  });
   loadTable();
 };
 
